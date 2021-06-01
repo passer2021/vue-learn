@@ -7,8 +7,7 @@ class Store {
     // 0.保存选项
     this._mutations = options.mutations
     this._actions = options.actions
-
-    let computed = {}
+    this._getters = options.getters
     // 1.对state做响应式处理
     // Vue.util.defineReactive(this, 'state', {})
     // this._vm.foo = 'fooooooo'
@@ -20,17 +19,16 @@ class Store {
         }
       },
     })
-
-
     // getters
     // 可否结合计算属性
-    let getters = options.getters
+    let computed = {}
     this.getters = {}
-    Object.keys(getters).forEach(key => {
-      computed[key] = getters[key]
-      Object.defineProperty(this.getters, key, {
+    const self = this
+    Object.keys(this._getters).forEach(key => {
+      computed[key] = self._getters[key]
+      Object.defineProperty(self.getters, key, {
         get:() => {
-          return computed[key](this.state)
+          return computed[key](self.state)
         }
       })
     })
