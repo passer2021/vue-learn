@@ -83,8 +83,13 @@ class Compile {
             // 看看是否是合法指令，如果是则执行处理函数
             this[dir] && this[dir](node, exp)
           }
+          // 事件处理
+          if (this.isEvent(attrName)) {
+            // @click="clickEvent"
+            const dir = attrName.substring(1)
+            this.eventHandler(node, exp, dir)
+          }
         });
-
         // 递归
         if (node.childNodes.length > 0) {
           this.compile(node);
@@ -124,18 +129,29 @@ class Compile {
   htmlUpdater(node, val) {
     node.innerHTML = val
   }
-
+  // k-model
+  model(node, exp) {
+    // 只是负责更新和赋值
+    this.update(node, exp, "model");
+    //事件监听
+    node.addEventListener('input', e => {
+      this.$vm[exp] = e.target.value
+    })
+  }
+  modelUpdater(node, val) {
+    // 元素赋值
+    node.value = val
+  }
   // 解析{{xxx}}
   compileText(node) {
     this.update(node, RegExp.$1, "text")
     // 1.获取表达式的值
     // node.textContent = this.$vm[RegExp.$1]
   }
-// 判断是否是元素
+  // 判断是否是元素
   isElement(node) {
     return node.nodeType === 1
   }
-
   // {{xxx}}
   isInter(node) {
     return node.nodeType === 3 && /\{\{(.*)\}\}/.test(node.textContent)
@@ -143,6 +159,15 @@ class Compile {
   // 判断是否是指令
   isDir(attrName) {
     return attrName.startsWith("k-")
+  }
+  // 判断是否为事件
+  isEvent(attrName) {
+    return attrName.startsWith("@")
+  }
+  // 事件处理
+  eventHandler(node, exp, dir) {
+    const fn = this.$vm.$options.methods && this.$vm.$options.methods[exp]
+    node.addEventListener(dir, fn.bind(this.$vm))
   }
 }
 
