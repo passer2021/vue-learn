@@ -1,4 +1,5 @@
-let Vue;
+
+let Vue
 // vue插件形式：
 // 实现一个install方法，该方法会在use的时候被调用
 class KVueRouter {
@@ -7,12 +8,15 @@ class KVueRouter {
     this.$options = options;
 
     // 需要将current属性声明为响应式的
-    Vue.util.defineReactive(
-      this,
-      "current",
-      window.location.hash.slice(1) || "/"
-    );
-
+    // Vue.util.defineReactive(
+    //   this,
+    //   "current",
+    //   window.location.hash.slice(1) || "/"
+    // );
+    this.current = window.location.hash.slice(1) || "/"
+    Vue.util.defineReactive(this, "matched", [])
+    // match方法可以递归遍历路由表，获得匹配关系数组
+    this.match()
     // set方法接收obj必须是响应式的
     // Vue.set(obj, key, val)
 
@@ -20,8 +24,30 @@ class KVueRouter {
     window.addEventListener("hashchange", () => {
       // hash: #/about
       console.log(this.current);
-      this.current = window.location.hash.slice(1);
-    });
+      this.current = window.location.hash.slice(1)
+      // 路由变化后重新匹配
+      this.matched = []
+      this.match()
+    })
+  }
+
+  match(routes){
+    routes = routes || this.$options.routes
+    // 递归遍历路由表
+    for(const route of routes) {
+      if(route.path === '/' && this.current === '/') {
+        this.matched.push(route)
+        return
+      }
+      // /about/info
+      if(route.path !== '/' && this.current.startsWith(route.path)) {
+        this.matched.push(route)
+        if(route.children) {
+          this.match(route.children)
+        }
+        return
+      }
+    }
   }
 }
 
@@ -71,14 +97,29 @@ KVueRouter.install = function(_Vue) {
   });
   Vue.component("router-view", {
     render(h) {
+      //标记当前router-view的深度
+      this.$vnode.data.routerView = true
+      let depth = 0
+      let parent = this.$parent
+      while(parent) {
+        const vnodeData = parent.$vnode && parent.$vnode.data
+        if(vnodeData) {
+          if(vnodeData.routerView) {
+            // 说明当前的parent是一个router-view
+            depth++
+          }
+        }
+        parent = parent.$parent
+      }
       // 数据响应式：数据变化可侦听，使用这些数据组件就会和响应式数据产生依赖关系
       // 将来如果响应式数据发生变化，这些组件会重新渲染
       // 0.获取router实例
       // console.log(this.$router.$options, this.$router.current);
       let component = null;
-      const route = this.$router.$options.routes.find(
-        (route) => route.path === this.$router.current
-      );
+      // const route = this.$router.$options.routes.find(
+      //   (route) => route.path === this.$router.current
+      // );
+      const route = this.$router.matched[depth]
       if (route) {
         component = route.component;
       }
