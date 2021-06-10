@@ -1,0 +1,25 @@
+<div id="app"></div>
+<script src="./kvue2.js"></script>
+<script>
+    // 1.数据驱动：数据响应式
+    // 2.编译：得到渲染函数
+    const app = new KVue({
+        el: '#app',
+        data: {
+            counter: 1
+        },
+        render(h) {
+            // const h1 = document.createElement("h1")
+            // h1.textContent = this.counter
+            // return h1
+        //    return h('h1', null, this.counter + '')
+        return h('section', null, [
+            h('p', null, this.counter + ''),
+            h('p', null, this.counter + '')
+        ])
+        }
+    })
+    setInterval(() => {
+        app.counter++
+    }, 1000);
+</script>
